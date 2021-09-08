@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% for group.slug in group.slug %}
+  {% block title %}
+    {{ group.slug }}
+  {% endblock %}
+{% endfor %}
+  {% for group.slug in group.slug %}
+    {% block header %}
+    {{ group }}
+    {% endblock %}
+  {% endfor %}
+{% block content %}
+  <p>{{ group.description }}</p>
+    {% for post in page_obj %}
+      {% include 'posts/includes/post_list.html' %}
+        <a href="{% url 'post:post_detail' post_id=post.id %}">Подробная информация.</a><br>
+      {% if post.group.slug %}
+        <a href="{% url 'post:group_list' post.group.slug %}">Все записи группы.</a>
+      {% else %}
+        <p><span style="text-decoration: underline;">У этого поста нет группы.</span></p>
+      {% endif %}
+      {% if not forloop.last %}<hr>{% endif %}
+    {% endfor %}
+    {% include 'posts/includes/paginator.html' %}
+{% endblock %}
