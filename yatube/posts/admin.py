@@ -21,7 +21,7 @@ class GroupAdmin(admin.ModelAdmin):
 
 class CommentAdmin(admin.ModelAdmin):
     """Class that configures the display of Comment model. """
-    list_display = ('pk', 'author', 'text', 'created',)
+    list_display = ('pk', 'author', 'text', 'pub_date',)
     list_filter = ('author',)
     empty_value_display = '-пусто-'
 
