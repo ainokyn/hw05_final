@@ -7,12 +7,17 @@ from .forms import CommentForm, PostForm
 from .models import Follow, Group, Post, User
 
 
-def index(request):
-    """Function for handling a request to the main page."""
-    posts = Post.objects.all()
+def paginator(posts, request):
     paginator = Paginator(posts, settings.NUM_POSTS_ON_PAGE)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
+    return page_obj
+
+
+def index(request):
+    """Function for handling a request to the main page."""
+    posts = Post.objects.all()
+    page_obj = paginator(posts, request)
     template = 'posts/index.html'
     сontext: dict = {
         'page_obj': page_obj,
@@ -23,10 +28,8 @@ def index(request):
 def group_posts(request, slug):
     """Function for processing a request to a group page."""
     group = get_object_or_404(Group, slug=slug)
-    post = group.posts.all()
-    paginator = Paginator(post, settings.NUM_POSTS_ON_PAGE)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
+    posts = group.posts.all()
+    page_obj = paginator(posts, request)
     context: dict = {
         'group': group,
         'page_obj': page_obj,
@@ -37,9 +40,7 @@ def group_posts(request, slug):
 def profile(request, username):
     author = get_object_or_404(User, username=username)
     posts = author.posts.all()
-    paginator = Paginator(posts, settings.NUM_POSTS_ON_PAGE)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
+    page_obj = paginator(posts, request)
     num_post = posts.count()
     following = False
     if request.user.is_authenticated and author.following.filter(
@@ -113,10 +114,8 @@ def add_comment(request, post_id):
 @login_required
 def follow_index(request):
     posts = Post.objects.filter(author__following__user=request.user).all()
-    paginator = Paginator(posts, settings.NUM_POSTS_ON_PAGE)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-    context = {'page_obj': page_obj, }
+    page_obj = paginator(posts, request)
+    context = {'page_obj': page_obj}
     return render(request, 'posts/follow.html', context)
 
 

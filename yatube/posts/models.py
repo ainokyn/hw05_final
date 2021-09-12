@@ -1,6 +1,8 @@
 from django.contrib.auth import get_user_model
 from django.db import models
+
 from core.core.models import CreatedModel
+
 
 class Group(models.Model):
     """Description of the Group model."""
@@ -37,7 +39,7 @@ class Post(CreatedModel):
     image = models.ImageField(
         'Картинка',
         upload_to='posts/',
-        blank=True
+        blank=True, help_text='Выберите изображение для поста',
     )
 
     class Meta:
@@ -83,3 +85,7 @@ class Follow(models.Model):
         """Performs sorting."""
         verbose_name = 'Подписка'
         verbose_name_plural = 'Подписки'
+        constraints = [
+            models.UniqueConstraint(fields=['user', 'author'],
+                                    name='unique_follow')
+        ]

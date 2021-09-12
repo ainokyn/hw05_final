@@ -105,6 +105,28 @@ class PostCreateFormTests(TestCase):
             ).exists()
         )
 
+    def test_guest_user_cannot_publish_post(self):
+        """Проверяем, что не создаётся новая запись,
+        если пользователь не зарегистрирован.
+        """
+        form_data = {
+            'text':
+            'Текст поста для проверки невозможности'
+            'создания поста неавторизованным пользователем',
+            'group': self.group.pk,
+        }
+        response = self.guest_client.post(reverse('post:post_create'),
+                                          data=form_data,
+                                          follow=True)
+        self.assertRedirects(
+            response, '/auth/login/?next=%2Fcreate%2F')
+        self.assertFalse(
+            Post.objects.filter(
+                author=self.user,
+                text='Текст поста для проверки невозможности'
+                     'создания поста неавторизованным пользователем',
+                group=self.group.pk).exists())
+
     def test_post_edit(self):
         """Проверяем, что происходит изменение поста
         с post_id в базе данных.
