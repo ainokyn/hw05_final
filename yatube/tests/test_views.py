@@ -56,7 +56,7 @@ class PostPagesTests(TestCase):
                 image=cls.uploaded,
             )
             posts.append(cls.post)
-            Post.objects.bulk_create(posts, ignore_conflicts=True)
+        Post.objects.bulk_create(posts, ignore_conflicts=True)
 
         cls.form = PostForm()
 
