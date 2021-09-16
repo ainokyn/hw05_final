@@ -68,6 +68,7 @@ class StaticURLTests(TestCase):
         for adress_authorized in self.Adress_authorized:
             with self.subTest(adress_authorized=adress_authorized):
                 response = self.authorized_client.get(
-                    adress_authorized.name, {'username': 'tor'}, follow=True)
+                    adress_authorized.name,
+                    {'username': self.user.username}, follow=True)
                 self.assertTemplateUsed(
                     response, adress_authorized.value[0])
