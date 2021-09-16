@@ -48,12 +48,12 @@
             {% if user == post.author %}
                <a class="btn btn-primary" href="{% url 'post:update_post' post_id=post.id %}">
                редактировать запись</a>
-              {% if user.is_authenticated %}
-              <div class="card my-4">
-               <h5 class="card-header">Добавить комментарий:</h5>
-                <div class="card-body">
-                <form method="post" action="{% url 'post:add_comment' post.id %}">
-                  {% csrf_token %}
+            {% endif %}
+            <div class="card my-4">
+              <h5 class="card-header">Добавить комментарий:</h5>
+              <div class="card-body">
+              <form method="post" action="{% url 'post:add_comment' post.id %}">
+                {% csrf_token %}
                 {% for field in form %}
                     <div class="form-group row my-3">
                       <label for="{{ field.id_for_label }}">
@@ -76,7 +76,6 @@
                 </form>
                 </div>
               </div>
-              {% endif %}
               {% for comment in comments %}
               <div class="media mb-4">
               <small> Дата публикации: {{ comment.pub_date|date:" G:i d E Y" }}</small>
@@ -91,7 +90,6 @@
              </p>
             </div>
            </div>
-          {% endfor %}
+              {% endfor %}
           {% endif %}
-        {% endif %}
 {% endblock %}

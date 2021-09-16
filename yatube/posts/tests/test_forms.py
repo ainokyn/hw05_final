@@ -1,7 +1,5 @@
-
 import shutil
 import tempfile
-from http import HTTPStatus
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -154,38 +152,16 @@ class PostCreateFormTests(TestCase):
         """Проверяем lable."""
         text_label = PostCreateFormTests.form.fields['text'].label
         group_label = PostCreateFormTests.form.fields['group'].label
+        image_lable = PostCreateFormTests.form.fields['image'].label
         self.assertTrue(text_label, 'Текст поста')
         self.assertTrue(group_label, 'Группа поста')
+        self.assertTrue(image_lable, 'Картинка')
 
     def test_help(self):
         """Проверяем help."""
         text_help = PostCreateFormTests.form.fields['text'].help_text
         group_help = PostCreateFormTests.form.fields['group'].help_text
+        image_help = PostCreateFormTests.form.fields['image'].help_text
         self.assertTrue(text_help, 'Напишите текст поста')
         self.assertTrue(group_help, 'Выберите группу для поста')
-
-    def test_signup(self):
-        """Проверяем, что создаётся новый пользователь."""
-        response = self.client.get(reverse('users:signup'))
-        self.assertEqual(response.status_code, HTTPStatus.OK.value)
-        user_count = User.objects.count()
-        user_data = {
-            'first_name': 'masha',
-            'last_name': 'ivanova',
-            'username': 'zero',
-            'email': 'jhjh@yandex.ru',
-            'password1': '123qwe!E!E',
-            'password2': '123qwe!E!E',
-        }
-        response = self.guest_client.post(
-            reverse('users:signup'),
-            data=user_data,
-            follow=True)
-        self.assertEqual(User.objects.count(), user_count + 1)
-        self.assertTrue(
-            User.objects.filter(
-                first_name=self.user.first_name,
-                last_name=self.user.last_name,
-                username=self.user.username,
-            ).exists()
-        )
+        self.assertTrue(image_help, 'Выберите изображение для поста')

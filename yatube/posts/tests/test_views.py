@@ -47,17 +47,14 @@ class PostPagesTests(TestCase):
             content=small_gif,
             content_type='image/gif'
         )
-        posts = []
-        for post_num in range(13):
-            cls.post = Post.objects.create(
+        posts_list = [
+            Post(
+                text='Текст поста ' + str(i),
                 author=cls.user,
-                text='Тестовый текст %s' % post_num,
                 group=cls.group,
-                image=cls.uploaded,
-            )
-            posts.append(cls.post)
-        Post.objects.bulk_create(posts, ignore_conflicts=True)
-
+                image=cls.uploaded) for i in range(13)
+        ]
+        cls.post = Post.objects.bulk_create(posts_list, ignore_conflicts=True)
         cls.form = PostForm()
 
     @classmethod
@@ -81,15 +78,7 @@ class PostPagesTests(TestCase):
             'posts/profile.html': reverse(
                 'post:profile', kwargs={'username': self.user.username}),
             'posts/post_detail.html': reverse(
-                'post:post_detail', kwargs={'post_id': self.post.pk}),
-            'about/author.html': reverse('about:author'),
-            'about/tech.html': reverse('about:tech'),
-            'users/logged_out.html': reverse('users:logout'),
-            'users/signup.html': reverse('users:signup'),
-            'users/password_reset_form.html': reverse(
-                'users:password_reset_form'),
-            'users/password_reset_done.html': reverse(
-                'users:password_reset_done'),
+                'post:post_detail', kwargs={'post_id': self.post.pk})
         }
         for template, reverse_name in templates_pages_names.items():
             with self.subTest(reverse_name=reverse_name):
@@ -276,24 +265,6 @@ class PostPagesTests(TestCase):
         )
         self.assertNotEqual(self.group_3, self.group_4)
 
-    def test_context_user_form(self):
-        """Проверка, что в контексте передаётся форма для
-        создания нового пользователя.
-        """
-        response = self.authorized_client.get(reverse('users:signup'))
-        form_fields = {
-            'first_name': forms.fields.CharField,
-            'last_name': forms.fields.CharField,
-            'username': forms.fields.CharField,
-            'password1': forms.CharField,
-            'password2': forms.CharField,
-            'email': forms.EmailField,
-        }
-        for value, expected in form_fields.items():
-            with self.subTest(value=value):
-                form_field = response.context.get('form').fields.get(value)
-                self.assertIsInstance(form_field, expected)
-
     def test_post_wiht_comment_post_detail(self):
         """Проверьте, что после успешной отправки комментария он
         появляется на странице поста.
@@ -396,9 +367,9 @@ class PostPagesTests(TestCase):
         image_2 = image_1.partition('_')
         self.assertIn('posts/small', image_2[0])
 
-    def test_authorized_user_can_follow_and_unfollow(self):
+    def test_authorized_user_can_follow(self):
         """Проверка, что авторизированный пользователь может
-        подписываться и отписываться.
+        подписываться.
         """
         following = User.objects.create(username='following')
         self.authorized_client.post(
@@ -406,6 +377,12 @@ class PostPagesTests(TestCase):
         self.assertIs(
             Follow.objects.filter(user=self.user, author=following).exists(),
             True)
+
+    def test_authorized_user_can_unfollow(self):
+        """Проверка, что авторизированный пользователь может
+        отписываться.
+        """
+        following = User.objects.create(username='following')
         self.authorized_client.post(
             reverse('post:profile_unfollow', kwargs={'username': following}))
         self.assertIs(
@@ -414,15 +391,21 @@ class PostPagesTests(TestCase):
 
     def test_authorized_user_can_comment(self):
         """Проверка, что авторизированный пользователь может комментировать."""
-        self.comment = Comment.objects.create(
-            author=self.user,
-            text='это текст комментария_2',
-            post=self.post,
+        form_data = {
+            'author': self.user,
+            'text': 'Текст комментария для проверки возможности'
+                    'комментировать',
+            'post': self.post
+        }
+        self.authorized_client.post(reverse('post:add_comment',
+                                            kwargs={'post_id': self.post.pk}),
+                                    data=form_data,
+                                    follow=True)
+        self.assertTrue(
+            Comment.objects.filter(
+                author=self.user,
+                text='Текст комментария для проверки возможности'
+                     'комментировать',
+                post=self.post,
+            ).exists()
         )
-        self.authorized_client.post(
-            reverse('post:post_detail', kwargs={'post_id': self.post.pk}))
-        self.assertIs(
-            Comment.objects.filter(author=self.user,
-                                   text='это текст комментария_2',
-                                   post=self.post).exists(),
-            True)
