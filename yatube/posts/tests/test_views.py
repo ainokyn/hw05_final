@@ -55,6 +55,11 @@ class PostPagesTests(TestCase):
                 image=cls.uploaded) for i in range(13)
         ]
         cls.post = Post.objects.bulk_create(posts_list, ignore_conflicts=True)
+        cls.post_1 = Post.objects.create(
+            text='Тестовый текст поста',
+            author=cls.user,
+            group=cls.group,
+            image=cls.uploaded)
         cls.form = PostForm()
 
     @classmethod
@@ -78,7 +83,7 @@ class PostPagesTests(TestCase):
             'posts/profile.html': reverse(
                 'post:profile', kwargs={'username': self.user.username}),
             'posts/post_detail.html': reverse(
-                'post:post_detail', kwargs={'post_id': self.post.pk})
+                'post:post_detail', kwargs={'post_id': self.post_1.pk})
         }
         for template, reverse_name in templates_pages_names.items():
             with self.subTest(reverse_name=reverse_name):
@@ -94,7 +99,7 @@ class PostPagesTests(TestCase):
         """URL-адрес использует шаблон posts/create_post.html."""
         response = self.authorized_client.get(
             reverse('post:update_post', kwargs={
-                'post_id': self.post.pk
+                'post_id': self.post_1.pk
             }))
         self.assertTemplateUsed(response, 'posts/create_post.html')
 
@@ -106,10 +111,10 @@ class PostPagesTests(TestCase):
             response.context['page_obj']) == settings.NUM_POSTS_ON_PAGE)
 
     def test_second_page_contains_three_records(self):
-        """Проверка, паджинатора главной страницы следующие 3 поста."""
+        """Проверка, паджинатора главной страницы следующие 4 поста."""
         cache.clear()
         response = self.guest_client.get(reverse('post:index') + '?page=2')
-        self.assertEqual(len(response.context['page_obj']), 3)
+        self.assertEqual(len(response.context['page_obj']), 4)
 
     def test_context_index(self):
         """Проверка контекста главной страницы."""
@@ -146,12 +151,12 @@ class PostPagesTests(TestCase):
 
     def test_paginator_group_list_last_three_obj(self):
         """Проверка, паджинатора страницы со списком
-        постов следующие 3 поста.
+        постов следующие 4 поста.
         """
         cache.clear()
         response = self.client.get(reverse(
             'group:group_list', kwargs={'slug': self.group.slug}) + '?page=2')
-        self.assertEqual(len(response.context['page_obj']), 3)
+        self.assertEqual(len(response.context['page_obj']), 4)
 
     def test_paginator_profile_first_ten_obj(self):
         """Проверка, паджинатора профиля первые 10 постов."""
@@ -161,24 +166,24 @@ class PostPagesTests(TestCase):
             response.context['page_obj']) == settings.NUM_POSTS_ON_PAGE)
 
     def test_paginator_profile_last_three_obj(self):
-        """Проверка, паджинатора профиля следующие 3 поста."""
+        """Проверка, паджинатора профиля следующие 4 поста."""
         response = self.client.get(reverse('post:profile',
                                    kwargs={
                                        'username': self.user.username
                                    }) + '?page=2')
-        self.assertEqual(len(response.context['page_obj']), 3)
+        self.assertEqual(len(response.context['page_obj']), 4)
 
     def test_context_post_detail(self):
         """Проверка контекста страницы поста."""
         response = self.guest_client.get(reverse(
-            'post:post_detail', kwargs={'post_id': self.post.pk}))
+            'post:post_detail', kwargs={'post_id': self.post_1.pk}))
         post_list = Post.objects.filter(id=1)
         self.assertTrue(response.context['post'], post_list)
 
     def test_context_post_edit(self):
         """Проверка контекста редактирования страницы поста."""
         response = self.authorized_client.get(
-            reverse('post:update_post', kwargs={'post_id': self.post.pk}))
+            reverse('post:update_post', kwargs={'post_id': self.post_1.pk}))
         form_fields = {
             'text': forms.fields.CharField,
             'group': forms.models.ModelChoiceField,
@@ -272,10 +277,10 @@ class PostPagesTests(TestCase):
         self.comment = Comment.objects.create(
             author=self.user,
             text='это текст комментария',
-            post=self.post,
+            post=self.post_1,
         )
         response = self.authorized_client.post(
-            reverse('post:post_detail', kwargs={'post_id': self.post.pk}))
+            reverse('post:post_detail', kwargs={'post_id': self.post_1.pk}))
         first_object = response.context['comments'][0]
         comment_0 = first_object.text
         self.assertEqual(comment_0, 'это текст комментария')
@@ -288,7 +293,7 @@ class PostPagesTests(TestCase):
         self.user_2 = User.objects.create(username='user')
         Follow.objects.create(user=self.user_2, author=self.user)
         post_list = Post.objects.filter(
-            author=self.user, text='hello')[:settings.NUM_POSTS_ON_PAGE]
+            author=self.user)[:settings.NUM_POSTS_ON_PAGE]
         response = self.authorized_client.get(reverse(
             'post:follow_index'))
         self.assertEqual(list(response.context['page_obj']), list(post_list))
@@ -360,7 +365,7 @@ class PostPagesTests(TestCase):
         на страницу поста.
         """
         response = self.guest_client.post(
-            reverse('post:post_detail', kwargs={'post_id': self.post.pk}))
+            reverse('post:post_detail', kwargs={'post_id': self.post_1.pk}))
         first_object = response.context['post']
         image_0 = first_object.image
         image_1 = image_0.name
@@ -395,10 +400,11 @@ class PostPagesTests(TestCase):
             'author': self.user,
             'text': 'Текст комментария для проверки возможности'
                     'комментировать',
-            'post': self.post
+            'post': self.post_1
         }
         self.authorized_client.post(reverse('post:add_comment',
-                                            kwargs={'post_id': self.post.pk}),
+                                            kwargs={
+                                                'post_id': self.post_1.pk}),
                                     data=form_data,
                                     follow=True)
         self.assertTrue(
@@ -406,6 +412,6 @@ class PostPagesTests(TestCase):
                 author=self.user,
                 text='Текст комментария для проверки возможности'
                      'комментировать',
-                post=self.post,
+                post=self.post_1,
             ).exists()
         )
