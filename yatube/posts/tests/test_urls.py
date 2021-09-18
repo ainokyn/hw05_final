@@ -6,7 +6,7 @@ from django.core.cache import cache
 from django.test import Client, TestCase
 from django.urls import reverse
 
-from posts.models import Group, Post
+from posts.models import Follow, Group, Post
 
 User = get_user_model()
 
@@ -15,7 +15,8 @@ class StaticURLTests(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.user = User.objects.create_user(username='kok')
+        cls.user = User.objects.create_user(username='user')
+        cls.user_2 = User.objects.create_user(username='author')
         cls.group = Group.objects.create(
             title='Тестовая группа',
             slug='test_slug',
@@ -40,9 +41,9 @@ class StaticURLTests(TestCase):
             '/create/': ['posts/create_post.html', HTTPStatus.OK],
             f'/posts/{cls.post.pk}/comment':
             ['no_template', HTTPStatus.OK],
-            f'/profile/{cls.user.username}/follow/':
+            f'/profile/{cls.user_2.username}/follow/':
             ['no_template', HTTPStatus.OK],
-            f'/profile/{cls.user.username}/unfollow/':
+            f'/profile/{cls.user_2.username}/unfollow/':
             ['no_template', HTTPStatus.OK]})
 
     def setUp(self):
@@ -129,3 +130,26 @@ class StaticURLTests(TestCase):
         self.authorized_client.force_login(self.user_1)
         response = self.authorized_client.get(f'/posts/{self.post.pk}/edit/')
         self.assertEqual(response.status_code, HTTPStatus.FOUND)
+
+    def test_status_code_when_authorized_user_unfollow(self):
+        """Проверка статуса ответа сервера при отписке."""
+        author = User.objects.create(username='following')
+        Follow.objects.create(user=self.user, author=author)
+        response = self.authorized_client.get(
+            f'/profile/{author.username}/unfollow/', follow=True)
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+
+    def test_redirect_code_when_authorized_user_unfollow(self):
+        """Проверка редиректа при отписке."""
+        author = User.objects.create(username='following')
+        Follow.objects.create(user=self.user, author=author)
+        response = self.authorized_client.get(
+            f'/profile/{author.username}/unfollow/')
+        self.assertRedirects(response, reverse('post:follow_index'))
+
+    def test_redirect_code_when_authorized_user_follow(self):
+        """Проверка редиректа при подписке."""
+        author = User.objects.create(username='author_1')
+        response = self.authorized_client.get(
+            f'/profile/{author.username}/follow/')
+        self.assertRedirects(response, reverse('post:follow_index'))

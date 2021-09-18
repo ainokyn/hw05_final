@@ -23,7 +23,7 @@ class PostPagesTests(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.user = User.objects.create_user(username='auth')
+        cls.user = User.objects.create_user(username='username')
         cls.group = Group.objects.create(
             title='Тестовая группа',
             slug='test_slug',
@@ -388,11 +388,10 @@ class PostPagesTests(TestCase):
         отписываться.
         """
         following = User.objects.create(username='following')
+        Follow.objects.create(author=following, user=self.user)
         self.authorized_client.post(
             reverse('post:profile_unfollow', kwargs={'username': following}))
-        self.assertIs(
-            Follow.objects.filter(user=self.user, author=following).exists(),
-            False)
+        self.assertEqual(Follow.objects.count(), 0)
 
     def test_authorized_user_can_comment(self):
         """Проверка, что авторизированный пользователь может комментировать."""
