@@ -13,6 +13,8 @@ ALLOWED_HOSTS = [
     '127.0.0.1',
     '[::1]',
     'testserver',
+    'www.alexandra.pythonanywhere.com',
+    'alexandra.pythonanywhere.com',
 ]
 INSTALLED_APPS = [
     'users.apps.UsersConfig',
@@ -116,7 +118,3 @@ CACHES = {
         'TIMEOUT': 20,
     }
 }
-ALLOWED_HOSTS = [
-    'www.alexandra.pythonanywhere.com',
-    'alexandra.pythonanywhere.com',
-]
